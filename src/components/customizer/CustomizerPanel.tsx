@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { usePortfolioStore } from "@/lib/store";
 import { SeoPanel } from "@/components/seo/SeoPanel";
+import { ThemeEditor } from "@/components/customizer/ThemeEditor";
 import { downloadResumePdf } from "@/lib/pdf-resume";
 import {
   X,
@@ -91,8 +92,6 @@ export function CustomizerPanel() {
   const setSocials = usePortfolioStore((s) => s.setSocials);
   const setAvatar = usePortfolioStore((s) => s.setAvatar);
   const setProjectImage = usePortfolioStore((s) => s.setProjectImage);
-  const setTheme = usePortfolioStore((s) => s.setTheme);
-  const setAccent = usePortfolioStore((s) => s.setAccent);
   const resetToDefaults = usePortfolioStore((s) => s.resetToDefaults);
 
   useEffect(() => {
@@ -720,39 +719,7 @@ export function CustomizerPanel() {
 
           {activeTab === "seo" && <SeoPanel />}
 
-          {activeTab === "theme" && (
-            <div className="form-stack">
-              <fieldset className="form-fieldset">
-                <legend>Color mode</legend>
-                <label className="toggle">
-                  <input
-                    type="radio"
-                    name="theme"
-                    checked={data.theme === "dark"}
-                    onChange={() => setTheme("dark")}
-                  />
-                  <span>Dark</span>
-                </label>
-                <label className="toggle">
-                  <input
-                    type="radio"
-                    name="theme"
-                    checked={data.theme === "light"}
-                    onChange={() => setTheme("light")}
-                  />
-                  <span>Light</span>
-                </label>
-              </fieldset>
-              <label className="field">
-                <span>Accent color</span>
-                <input
-                  type="color"
-                  value={data.accentColor}
-                  onChange={(e) => setAccent(e.target.value)}
-                />
-              </label>
-            </div>
-          )}
+          {activeTab === "theme" && <ThemeEditor />}
         </div>
       </div>
     </div>

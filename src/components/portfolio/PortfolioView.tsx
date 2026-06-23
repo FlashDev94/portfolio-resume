@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, type JSX } from "react";
 import { usePortfolioStore } from "@/lib/store";
+import { applyPortfolioTheme } from "@/lib/themes";
+import type { SectionId } from "@/lib/types";
 import { SiteNav } from "./SiteNav";
 import { HeroSection } from "./HeroSection";
 import { AboutSection } from "./AboutSection";
@@ -9,8 +12,6 @@ import { ExperienceSection } from "./ExperienceSection";
 import { ProjectsCarousel } from "./ProjectsCarousel";
 import { EducationSection } from "./EducationSection";
 import { ContactSection } from "./ContactSection";
-import type { SectionId } from "@/lib/types";
-import { useEffect, type JSX } from "react";
 
 const SECTION_MAP: Record<SectionId, () => JSX.Element> = {
   hero: HeroSection,
@@ -32,9 +33,8 @@ export function PortfolioView() {
   }, [hydrated, runSeoAnalysis]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--accent", data.accentColor);
-    document.documentElement.dataset.theme = data.theme;
-  }, [data.accentColor, data.theme]);
+    applyPortfolioTheme(data.themeId, data.customColors);
+  }, [data.themeId, data.customColors]);
 
   const enabled = [...data.sections]
     .filter((s) => s.enabled)
@@ -55,9 +55,12 @@ export function PortfolioView() {
       <footer className="site-footer">
         <div className="container footer-inner">
           <p>
-            © {new Date().getFullYear()} {data.hero.name || "Portfolio"}. Built with Portfolio Forge.
+            © {new Date().getFullYear()} {data.hero.name || "Portfolio"}. Built
+            with Portfolio Forge.
           </p>
-          <p className="footer-a11y">Designed for WCAG 2.2 AA · prefers-reduced-motion respected</p>
+          <p className="footer-a11y">
+            Designed for WCAG 2.2 AA · prefers-reduced-motion respected
+          </p>
         </div>
       </footer>
     </>
