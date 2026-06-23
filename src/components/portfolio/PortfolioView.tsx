@@ -11,6 +11,7 @@ import { EducationSection } from "./EducationSection";
 import { ContactSection } from "./ContactSection";
 import type { SectionId } from "@/lib/types";
 import { useEffect, type JSX } from "react";
+import { applyThemeToDocument, getPreset, resolveThemeColors } from "@/lib/themes";
 
 const SECTION_MAP: Record<SectionId, () => JSX.Element> = {
   hero: HeroSection,
@@ -32,9 +33,16 @@ export function PortfolioView() {
   }, [hydrated, runSeoAnalysis]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--accent", data.accentColor);
-    document.documentElement.dataset.theme = data.theme;
-  }, [data.accentColor, data.theme]);
+    const colors = resolveThemeColors(data.themeId, data.customColors);
+    const mode =
+      data.themeId === "custom"
+        ? // Heuristic: light if background is bright
+          luminance(colors.background) > 0.45
+          ? "light"
+          : "dark"
+        : getPreset(data.themeId)?.mode ?? "dark";
+    applyThemeToDocument(colors, mode);
+  }, [data.themeId, data.customColors]);
 
   const enabled = [...data.sections]
     .filter((s) => s.enabled)
@@ -62,4 +70,14 @@ export function PortfolioView() {
       </footer>
     </>
   );
+}
+
+function luminance(hex: string): number {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim());
+  if (!m) return 0;
+  const [r, g, b] = [m[1], m[2], m[3]].map((x) => {
+    const c = parseInt(x, 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }

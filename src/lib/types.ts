@@ -95,6 +95,38 @@ export interface SeoMeta {
   author: string;
 }
 
+/** Classy built-in palettes + fully custom element colors */
+export type ThemeId =
+  | "midnight"
+  | "ivory"
+  | "slate"
+  | "burgundy"
+  | "forest"
+  | "champagne"
+  | "ocean"
+  | "custom";
+
+export interface ThemeColors {
+  background: string;
+  backgroundAlt: string;
+  surface: string;
+  surfaceElevated: string;
+  foreground: string;
+  muted: string;
+  accent: string;
+  accentForeground: string;
+  border: string;
+  ring: string;
+}
+
+export interface ThemePreset {
+  id: Exclude<ThemeId, "custom">;
+  label: string;
+  description: string;
+  mode: "dark" | "light";
+  colors: ThemeColors;
+}
+
 export interface PortfolioData {
   hero: HeroContent;
   about: AboutContent;
@@ -106,8 +138,14 @@ export interface PortfolioData {
   socials: SocialLink[];
   sections: SectionConfig[];
   seo: SeoMeta;
-  theme: "dark" | "light";
-  accentColor: string;
+  /** @deprecated prefer themeId — kept for migration of older localStorage */
+  theme?: "dark" | "light";
+  /** @deprecated prefer themeColors.accent */
+  accentColor?: string;
+  /** Active palette preset or "custom" */
+  themeId: ThemeId;
+  /** User-tuned colors used when themeId === "custom" (also stores last custom edits) */
+  customColors: ThemeColors;
 }
 
 export interface SeoIssue {
