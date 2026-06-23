@@ -1318,3 +1318,123 @@ main:focus {
 .customizer-panel {
   will-change: transform;
 }
+
+/* —— Theme editor (customizer) —— */
+.theme-editor {
+  gap: 1rem;
+}
+.theme-preset-grid {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.theme-preset-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: start;
+  text-align: left;
+  padding: 0.55rem 0.6rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  min-height: 44px;
+}
+.theme-preset-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.theme-preset-card.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.theme-swatches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.theme-swatches span {
+  display: block;
+  min-height: 100%;
+}
+.theme-preset-meta {
+  display: grid;
+  gap: 0.15rem;
+}
+.theme-preset-meta strong {
+  font-size: 0.88rem;
+}
+.theme-live-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.theme-live-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.theme-color-fields {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.theme-color-row {
+  display: grid;
+  gap: 0.35rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--border);
+}
+.theme-color-label {
+  display: grid;
+  gap: 0.1rem;
+}
+.theme-color-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.theme-color-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.theme-color-inputs input[type="color"] {
+  width: 44px;
+  height: 44px;
+  padding: 2px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+}
+.theme-hex-input {
+  flex: 1;
+  min-height: 44px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-family: ui-monospace, monospace;
+}

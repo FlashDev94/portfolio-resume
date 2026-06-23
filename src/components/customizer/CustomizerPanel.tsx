@@ -21,6 +21,12 @@ import type {
   SkillItem,
   SocialLink,
 } from "@/lib/types";
+import {
+  COLOR_FIELDS,
+  DEFAULT_CUSTOM_COLORS,
+  THEME_PRESETS,
+  resolveThemeColors,
+} from "@/lib/themes";
 
 const TABS = [
   { id: "sections", label: "Sections" },
@@ -91,9 +97,12 @@ export function CustomizerPanel() {
   const setSocials = usePortfolioStore((s) => s.setSocials);
   const setAvatar = usePortfolioStore((s) => s.setAvatar);
   const setProjectImage = usePortfolioStore((s) => s.setProjectImage);
-  const setTheme = usePortfolioStore((s) => s.setTheme);
-  const setAccent = usePortfolioStore((s) => s.setAccent);
+  const setThemeId = usePortfolioStore((s) => s.setThemeId);
+  const setCustomColor = usePortfolioStore((s) => s.setCustomColor);
+  const setCustomColors = usePortfolioStore((s) => s.setCustomColors);
   const resetToDefaults = usePortfolioStore((s) => s.resetToDefaults);
+
+  const activePalette = resolveThemeColors(data.themeId, data.customColors);
 
   useEffect(() => {
     if (!open) return;
@@ -721,42 +730,152 @@ export function CustomizerPanel() {
           {activeTab === "seo" && <SeoPanel />}
 
           {activeTab === "theme" && (
-            <div className="form-stack">
-              <fieldset className="form-fieldset">
-                <legend>Color mode</legend>
-                <label className="toggle">
-                  <input
-                    type="radio"
-                    name="theme"
-                    checked={data.theme === "dark"}
-                    onChange={() => setTheme("dark")}
-                  />
-                  <span>Dark</span>
-                </label>
-                <label className="toggle">
-                  <input
-                    type="radio"
-                    name="theme"
-                    checked={data.theme === "light"}
-                    onChange={() => setTheme("light")}
-                  />
-                  <span>Light</span>
-                </label>
+            <div className="form-stack theme-editor">
+              <p className="muted tiny">
+                Choose a classy preset, or refine every surface on the page with custom colors.
+                Changes apply live.
+              </p>
+
+              <fieldset className="form-fieldset theme-presets-fieldset">
+                <legend>Presets</legend>
+                <ul className="theme-preset-grid" role="listbox" aria-label="Theme presets">
+                  {THEME_PRESETS.map((preset) => {
+                    const selected = data.themeId === preset.id;
+                    return (
+                      <li key={preset.id}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={selected}
+                          className={`theme-preset-card${selected ? " is-selected" : ""}`}
+                          onClick={() => setThemeId(preset.id)}
+                        >
+                          <span className="theme-swatches" aria-hidden="true">
+                            <span style={{ background: preset.colors.background }} />
+                            <span style={{ background: preset.colors.surface }} />
+                            <span style={{ background: preset.colors.accent }} />
+                            <span style={{ background: preset.colors.foreground }} />
+                          </span>
+                          <span className="theme-preset-meta">
+                            <strong>{preset.label}</strong>
+                            <span className="muted tiny">{preset.description}</span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                  <li>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={data.themeId === "custom"}
+                      className={`theme-preset-card${data.themeId === "custom" ? " is-selected" : ""}`}
+                      onClick={() => {
+                        // Seed custom from current resolved palette if first time
+                        if (data.themeId !== "custom") {
+                          setCustomColors({ ...activePalette });
+                        } else {
+                          setThemeId("custom");
+                        }
+                      }}
+                    >
+                      <span className="theme-swatches theme-swatches--custom" aria-hidden="true">
+                        <span style={{ background: data.customColors.background }} />
+                        <span style={{ background: data.customColors.surface }} />
+                        <span style={{ background: data.customColors.accent }} />
+                        <span style={{ background: data.customColors.foreground }} />
+                      </span>
+                      <span className="theme-preset-meta">
+                        <strong>Custom atelier</strong>
+                        <span className="muted tiny">
+                          Pick colors for page, cards, text, accents, borders &amp; focus
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                </ul>
               </fieldset>
-              <label className="field">
-                <span>Accent color</span>
-                <input
-                  type="color"
-                  value={data.accentColor}
-                  onChange={(e) => setAccent(e.target.value)}
-                />
-              </label>
+
+              <div className="theme-live-preview" aria-hidden="true">
+                <span className="theme-live-chip" style={{ background: activePalette.background, color: activePalette.foreground, borderColor: activePalette.border }}>
+                  Page
+                </span>
+                <span className="theme-live-chip" style={{ background: activePalette.surface, color: activePalette.foreground, borderColor: activePalette.border }}>
+                  Card
+                </span>
+                <span className="theme-live-chip" style={{ background: activePalette.accent, color: activePalette.accentForeground, borderColor: activePalette.accent }}>
+                  Accent
+                </span>
+              </div>
+
+              <fieldset className="form-fieldset">
+                <legend>Element colors {data.themeId !== "custom" ? "(switches to Custom)" : ""}</legend>
+                <p className="muted tiny" style={{ marginTop: 0 }}>
+                  Adjust any token below. Editing a color selects the Custom atelier theme.
+                </p>
+                <ul className="theme-color-fields">
+                  {COLOR_FIELDS.map((field) => {
+                    const value =
+                      data.themeId === "custom"
+                        ? data.customColors[field.key]
+                        : activePalette[field.key];
+                    return (
+                      <li key={field.key} className="theme-color-row">
+                        <label className="theme-color-label">
+                          <span className="theme-color-name">{field.label}</span>
+                          <span className="muted tiny">{field.help}</span>
+                        </label>
+                        <div className="theme-color-inputs">
+                          <input
+                            type="color"
+                            value={normalizeHex(value)}
+                            aria-label={`${field.label} color picker`}
+                            onChange={(e) => setCustomColor(field.key, e.target.value)}
+                          />
+                          <input
+                            type="text"
+                            className="theme-hex-input"
+                            value={value}
+                            spellCheck={false}
+                            aria-label={`${field.label} hex value`}
+                            onChange={(e) => {
+                              const v = e.target.value.trim();
+                              if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) {
+                                setCustomColor(field.key, expandHex(v));
+                              }
+                            }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setCustomColors({ ...DEFAULT_CUSTOM_COLORS })}
+                >
+                  Reset custom palette to Midnight defaults
+                </button>
+              </fieldset>
             </div>
           )}
         </div>
       </div>
     </div>
   );
+}
+
+function normalizeHex(hex: string): string {
+  const h = expandHex(hex);
+  return /^#[0-9a-fA-F]{6}$/.test(h) ? h : "#000000";
+}
+
+function expandHex(hex: string): string {
+  const t = hex.trim();
+  const m3 = /^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/.exec(t);
+  if (m3) return `#${m3[1]}${m3[1]}${m3[2]}${m3[2]}${m3[3]}${m3[3]}`.toLowerCase();
+  return t.toLowerCase();
 }
 
 function ListEditor<T extends { id: string }>({

@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { DEFAULT_PORTFOLIO } from "./mock-data";
 import { analyzeSeo } from "./seo-analyzer";
+import { DEFAULT_CUSTOM_COLORS, getPreset } from "./themes";
 import type {
   PortfolioData,
   SectionId,
@@ -13,6 +14,8 @@ import type {
   ProjectItem,
   EducationItem,
   SocialLink,
+  ThemeColors,
+  ThemeId,
 } from "./types";
 
 interface PortfolioStore {
@@ -29,7 +32,11 @@ interface PortfolioStore {
   patchAbout: (patch: Partial<PortfolioData["about"]>) => void;
   patchContact: (patch: Partial<PortfolioData["contact"]>) => void;
   patchSeo: (patch: Partial<PortfolioData["seo"]>) => void;
-  setTheme: (theme: PortfolioData["theme"]) => void;
+  setThemeId: (themeId: ThemeId) => void;
+  setCustomColor: (key: keyof ThemeColors, value: string) => void;
+  setCustomColors: (colors: ThemeColors) => void;
+  /** legacy helpers still used by older panel code paths */
+  setTheme: (theme: "dark" | "light") => void;
   setAccent: (color: string) => void;
   toggleSection: (id: SectionId) => void;
   reorderSection: (id: SectionId, direction: "up" | "down") => void;
@@ -66,6 +73,31 @@ function patchData(
   });
 }
 
+/** Migrate older persisted shapes into themeId + customColors */
+export function migratePortfolioData(raw: Partial<PortfolioData> | PortfolioData): PortfolioData {
+  const base = { ...DEFAULT_PORTFOLIO, ...raw } as PortfolioData;
+  const customColors: ThemeColors = {
+    ...DEFAULT_CUSTOM_COLORS,
+    ...(raw.customColors ?? {}),
+  };
+  if (raw.accentColor && !raw.customColors?.accent) {
+    customColors.accent = raw.accentColor;
+  }
+
+  let themeId: ThemeId = raw.themeId ?? "midnight";
+  if (!raw.themeId && raw.theme === "light") themeId = "ivory";
+  if (!raw.themeId && raw.theme === "dark") themeId = "midnight";
+
+  return {
+    ...DEFAULT_PORTFOLIO,
+    ...base,
+    themeId,
+    customColors,
+    theme: getPreset(themeId === "custom" ? "midnight" : themeId)?.mode ?? base.theme ?? "dark",
+    accentColor: customColors.accent,
+  };
+}
+
 export const usePortfolioStore = create<PortfolioStore>()(
   persist(
     (set, get) => ({
@@ -78,7 +110,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
       setPanelOpen: (open) => set({ panelOpen: open }),
       setActiveTab: (tab) => set({ activeTab: tab }),
       replaceData: (data) => {
-        set({ data });
+        set({ data: migratePortfolioData(data) });
         scheduleSeo(get, (p) => set(p));
       },
       patchHero: (patch) =>
@@ -89,8 +121,50 @@ export const usePortfolioStore = create<PortfolioStore>()(
         patchData(set, get, (d) => ({ ...d, contact: { ...d.contact, ...patch } })),
       patchSeo: (patch) =>
         patchData(set, get, (d) => ({ ...d, seo: { ...d.seo, ...patch } })),
-      setTheme: (theme) => patchData(set, get, (d) => ({ ...d, theme })),
-      setAccent: (accentColor) => patchData(set, get, (d) => ({ ...d, accentColor })),
+      setThemeId: (themeId) =>
+        patchData(set, get, (d) => {
+          if (themeId === "custom") {
+            return { ...d, themeId: "custom", theme: "dark", accentColor: d.customColors.accent };
+          }
+          const preset = getPreset(themeId);
+          return {
+            ...d,
+            themeId,
+            theme: preset?.mode ?? "dark",
+            accentColor: preset?.colors.accent ?? d.accentColor,
+            // Keep customColors as last user palette; switch only active preset
+          };
+        }),
+      setCustomColor: (key, value) =>
+        patchData(set, get, (d) => {
+          const customColors = { ...d.customColors, [key]: value };
+          return {
+            ...d,
+            themeId: "custom",
+            customColors,
+            accentColor: key === "accent" ? value : customColors.accent,
+          };
+        }),
+      setCustomColors: (colors) =>
+        patchData(set, get, (d) => ({
+          ...d,
+          themeId: "custom",
+          customColors: colors,
+          accentColor: colors.accent,
+        })),
+      setTheme: (theme) =>
+        patchData(set, get, (d) => ({
+          ...d,
+          theme,
+          themeId: theme === "light" ? "ivory" : "midnight",
+        })),
+      setAccent: (accentColor) =>
+        patchData(set, get, (d) => ({
+          ...d,
+          themeId: "custom",
+          accentColor,
+          customColors: { ...d.customColors, accent: accentColor },
+        })),
       toggleSection: (id) =>
         patchData(set, get, (d) => ({
           ...d,
@@ -136,7 +210,19 @@ export const usePortfolioStore = create<PortfolioStore>()(
     {
       name: "portfolio-forge-v1",
       partialize: (s) => ({ data: s.data }),
+      merge: (persisted, current) => {
+        const p = persisted as { data?: PortfolioData } | undefined;
+        if (!p?.data) return current;
+        return {
+          ...current,
+          ...p,
+          data: migratePortfolioData(p.data),
+        };
+      },
       onRehydrateStorage: () => (state) => {
+        if (state?.data) {
+          state.replaceData(migratePortfolioData(state.data));
+        }
         state?.setHydrated(true);
         state?.runSeoAnalysis();
       },

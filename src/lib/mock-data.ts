@@ -1,4 +1,5 @@
 import type { PortfolioData } from "./types";
+import { DEFAULT_CUSTOM_COLORS } from "./themes";
 
 const uid = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
@@ -6,6 +7,8 @@ const uid = () =>
     : `id-${Math.random().toString(36).slice(2, 11)}`;
 
 export const DEFAULT_PORTFOLIO: PortfolioData = {
+  themeId: "midnight",
+  customColors: { ...DEFAULT_CUSTOM_COLORS },
   theme: "dark",
   accentColor: "#3B82F6",
   hero: {
