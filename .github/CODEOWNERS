@@ -1,0 +1,4 @@
+# FlashDev94 owns all paths — required for "Require review from Code Owners"
+# on protected main. External contributors can open PRs; only the owner
+# has write access and can approve/merge.
+* @FlashDev94
