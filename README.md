@@ -40,3 +40,4 @@ Portfolio state is saved in `localStorage` under `portfolio-forge-v1`. Use **Res
 ## SEO MCP note
 
 No standalone SEO MCP was connected in this environment, so analysis is implemented as a first-party module (`src/lib/seo-analyzer.ts`) wired into the save path in the customizer. It estimates title/meta health, keyword coverage, content depth, and trust signals so you can see impact while editing.
+actual requested README change
